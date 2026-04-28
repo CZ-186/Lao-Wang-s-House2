@@ -1,0 +1,44 @@
+[
+  {
+    "title": "便利贴",
+    "src": "./audio/便利贴!_!.m4a",
+    "size": 95,
+    "contributor": "(你猜)"
+  },
+  {
+    "title": "如愿",
+    "src": "./audio/如愿.m4a",
+    "size": 105,
+    "contributor": "(你猜)"
+  },
+  {
+    "title": "寂寞的季节",
+    "src": "./audio/寂寞的季节.m4a",
+    "size": 90,
+    "contributor": "小声的老王"
+  },
+  {
+    "title": "巴赫旧约",
+    "src": "./audio/巴赫旧约.m4a",
+    "size": 100,
+    "contributor": "老王"
+  },
+  {
+    "title": "情歌",
+    "src": "./audio/情歌.m4a",
+    "size": 85,
+    "contributor": "老王"
+  },
+  {
+    "title": "枫",
+    "src": "./audio/枫.m4a",
+    "size": 110,
+    "contributor": "老王"
+  },
+  {
+    "title": "群歌!",
+    "src": "./audio/群歌!.m4a",
+    "size": 95,
+    "contributor": "(你猜)"
+  }
+]
