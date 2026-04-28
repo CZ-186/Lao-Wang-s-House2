@@ -23,7 +23,7 @@ app.post('/api/upload', async (req, res) => {
     const safeName = fileName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5.]/g, '');
     const finalFileName = `${safeName.replace(/\.[^/.]+$/, "")}_${safeContributor}.m4a`;
 
-    const repo = 'CZ-186/Lao-Wang-s-House2';
+    const repo = 'CZ-186/W-s-Music-web';
     const path = `audio/${finalFileName}`;
     const url = `https://api.github.com/repos/${repo}/contents/${path}`;
 
