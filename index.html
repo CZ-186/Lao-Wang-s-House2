@@ -5,191 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>谁的星空</title>
 <style>
-  /* --- 极致深邃暗黑背景 --- */
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: radial-gradient(circle at 50% 50%, #0a1118 0%, #030508 60%, #000000 100%);
-    background-color: #000000;
-    color: white;
-    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  }
-
-  /* --- 全屏交互画布 (底层，绝不挡点击) --- */
-  #particle-canvas {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: 0;
-    pointer-events: none; 
-  }
-
-  /* --- 底部平滑起伏的超细长频谱 --- */
-  #visualizer-container {
-    position: absolute;
-    bottom: 0; left: 0;
-    width: 100vw; height: 30vh; 
-    display: flex; align-items: flex-end; justify-content: center; gap: 3px; 
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  .bar {
-    width: 3px;
-    background: linear-gradient(to top, rgba(255, 160, 175, 0.1), rgba(255, 160, 175, 0.9)); 
-    border-radius: 3px 3px 0 0;
-    transform-origin: bottom;
-    box-shadow: 0 0 15px rgba(255, 160, 175, 0.4);
-  }
-
-  /* --- BGM 控制器 --- */
-  #bgm-toggle {
-    position: absolute;
-    top: 30px; right: 30px;
-    z-index: 1000;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 8px 18px 8px 12px; border-radius: 30px;
-    color: #ffffff; font-size: 12px; letter-spacing: 1px;
-    cursor: pointer; display: flex; align-items: center; gap: 10px;
-    transition: all 0.4s;
-    pointer-events: auto; 
-  }
+  body { margin: 0; overflow: hidden; background: radial-gradient(circle at 50% 50%, #0a1118 0%, #030508 60%, #000000 100%); background-color: #000000; color: white; font-family: "Helvetica Neue", Helvetica, sans-serif; }
+  #particle-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+  #visualizer-container { position: absolute; bottom: 0; left: 0; width: 100vw; height: 30vh; display: flex; align-items: flex-end; justify-content: center; gap: 3px; z-index: 1; pointer-events: none; }
+  .bar { width: 3px; background: linear-gradient(to top, rgba(255, 160, 175, 0.1), rgba(255, 160, 175, 0.9)); border-radius: 3px 3px 0 0; transform-origin: bottom; box-shadow: 0 0 15px rgba(255, 160, 175, 0.4); }
+  #bgm-toggle { position: absolute; top: 30px; right: 30px; z-index: 1000; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 18px 8px 12px; border-radius: 30px; color: #ffffff; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.4s; }
   .cd-icon { font-size: 16px; display: inline-block; animation: spin 4s linear infinite; }
   #bgm-toggle.paused .cd-icon { animation-play-state: paused; filter: grayscale(100%) opacity(0.5); }
   #bgm-toggle.paused { background: rgba(0, 0, 0, 0.4); border-color: rgba(255, 255, 255, 0.2); }
   @keyframes spin { 100% { transform: rotate(360deg); } }
-
-  /* --- 右下角悬浮上传歌按钮 --- */
-  .contribute-btn {
-    position: fixed;
-    bottom: 30px; right: 30px;
-    z-index: 1000;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 12px 24px; border-radius: 30px;
-    font-size: 13px; letter-spacing: 1px; color: #ffffff;
-    text-decoration: none; display: flex; align-items: center; gap: 8px;
-    transition: all 0.4s; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    pointer-events: auto;
-  }
+  .contribute-btn { position: fixed; bottom: 30px; right: 30px; z-index: 1000; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 12px 24px; border-radius: 30px; font-size: 13px; color: #ffffff; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.4s; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
   .contribute-btn svg { width: 16px; height: 16px; fill: currentColor; }
-
-  /* --- 泡泡区域 --- */
-  #bubble-container {
-    position: absolute;
-    top: 35vh; 
-    left: 0;
-    width: 100vw; height: 65vh; 
-    z-index: 5;
-    pointer-events: none; 
-  }
-
-  .bubble {
-    position: absolute;
-    border-radius: 50%;
-    background: radial-gradient(100% 100% at 30% 30%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.02) 100%);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: inset 2px 2px 10px rgba(255, 255, 255, 0.5), 0 4px 20px rgba(255, 255, 255, 0.15);
-    display: flex; align-items: center; justify-content: center; text-align: center;
-    cursor: pointer; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    animation: float infinite ease-in-out;
-    pointer-events: auto; 
-  }
-  .bubble:hover {
-    transform: scale(1.1) translateY(-10px) !important;
-    background: radial-gradient(100% 100% at 30% 30%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: inset 2px 2px 15px rgba(255, 255, 255, 0.6), 0 10px 30px rgba(255, 255, 255, 0.3);
-    z-index: 100;
-  }
-  .bubble.playing {
-    background: radial-gradient(100% 100% at 30% 30%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 100%);
-    border-color: rgba(255, 255, 255, 0.9);
-    box-shadow: inset 2px 2px 15px rgba(255, 255, 255, 0.8), 0 0 50px rgba(255, 255, 255, 0.4);
-    animation: pulse-3d 2.5s infinite;
-  }
-  
-  /* 更新了标题和贡献者的样式 */
-  .bubble .title { 
-    font-size: 14px; font-weight: 500; letter-spacing: 1px; 
-    color: #ffffff; 
-    text-shadow: 0 2px 4px rgba(0,0,0,1), 0 0 10px rgba(255,255,255,0.4); 
-    pointer-events: none; padding: 8px; line-height: 1.2; 
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-  }
-  .bubble .contributor { 
-    display: block; /* 核心修改：让 from xxx 显示出来 */
-    font-size: 11px; 
-    color: rgba(255,255,255,0.8); 
-    margin-top: 4px;
-    font-weight: normal;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-  }
-
+  #bubble-container { position: absolute; top: 35vh; left: 0; width: 100vw; height: 65vh; z-index: 5; pointer-events: none; }
+  .bubble { position: absolute; border-radius: 50%; background: radial-gradient(100% 100% at 30% 30%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.02) 100%); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: inset 2px 2px 10px rgba(255, 255, 255, 0.5), 0 4px 20px rgba(255, 255, 255, 0.15); display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); animation: float infinite ease-in-out; pointer-events: auto; }
+  .bubble:hover { transform: scale(1.1) translateY(-10px) !important; background: radial-gradient(100% 100% at 30% 30%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 100%); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: inset 2px 2px 15px rgba(255, 255, 255, 0.6), 0 10px 30px rgba(255, 255, 255, 0.3); z-index: 100; }
+  .bubble.playing { background: radial-gradient(100% 100% at 30% 30%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 100%); border-color: rgba(255, 255, 255, 0.9); box-shadow: inset 2px 2px 15px rgba(255, 255, 255, 0.8), 0 0 50px rgba(255, 255, 255, 0.4); animation: pulse-3d 2.5s infinite; }
+  .bubble .title { font-size: 14px; font-weight: 500; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,1), 0 0 10px rgba(255,255,255,0.4); pointer-events: none; padding: 8px; line-height: 1.2; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .bubble .contributor { display: block; font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 4px; font-weight: normal; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
   @keyframes float { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-20px) rotate(2deg); } 100% { transform: translateY(0px) rotate(0deg); } }
   @keyframes pulse-3d { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: inset 2px 2px 10px rgba(255, 255, 255, 0.6), inset -5px -5px 15px rgba(0, 0, 0, 0.4), 0 0 50px rgba(255, 255, 255, 0.2); } 100% { transform: scale(1); } }
-
-  /* --- 底部播放器 --- */
-  #player {
-    position: fixed; bottom: -120px; left: 50%; transform: translateX(-50%);
-    background: rgba(20, 20, 25, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-    padding: 15px 30px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.2);
-    box-shadow: 0 -10px 50px rgba(0,0,0,0.8); transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 200; width: 80%; max-width: 400px;
-  }
+  #player { position: fixed; bottom: -120px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 25, 0.85); backdrop-filter: blur(25px); padding: 15px 30px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 -10px 50px rgba(0,0,0,0.8); transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 200; width: 80%; max-width: 400px; }
   #player.active { bottom: 30px; }
   #now-playing { font-size: 14px; color: #ffffff; font-weight: bold; letter-spacing: 2px; }
-  #contributor-tag { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: -6px; letter-spacing: 1px; }
+  #contributor-tag { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: -6px; }
   audio { width: 100%; height: 35px; outline: none; opacity: 0.9; }
-
-  .music-note { position: absolute; font-size: 20px; color: rgba(255, 180, 180, 0.9); pointer-events: none; animation: floatUp 2s cubic-bezier(0.16, 1, 0.3, 1) forwards; z-index: 50; text-shadow: 0 0 15px rgba(255, 180, 180, 0.9); }
+  .music-note { position: absolute; font-size: 20px; color: rgba(255, 180, 180, 0.9); pointer-events: none; animation: floatUp 2s forwards; z-index: 50; text-shadow: 0 0 15px rgba(255, 180, 180, 0.9); }
   @keyframes floatUp { 0% { opacity: 0; transform: translateY(0) scale(0.8); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-150px) scale(1.2); } }
-
-  @media (max-width: 768px) {
-    #bgm-toggle { top: 20px; right: 20px; padding: 6px 12px; font-size: 11px; }
-    .contribute-btn { bottom: 20px; right: 20px; padding: 10px 16px; font-size: 12px; }
-    #player.active { bottom: 80px; }
-  }
+  @media (max-width: 768px) { #bgm-toggle { top: 20px; right: 20px; padding: 6px 12px; font-size: 11px; } .contribute-btn { bottom: 20px; right: 20px; padding: 10px 16px; font-size: 12px; } #player.active { bottom: 80px; } }
 </style>
 </head>
 <body>
-
 <audio id="bgm-element" src="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/43/4e/ce/434ecece-62a0-04fc-8898-55e91c5f3e75/mzaf_1137360759286248328.plus.aac.p.m4a" loop></audio>
-
 <div id="bgm-toggle" class="paused">
-  <span class="cd-icon">💿</span>
-  <span id="bgm-text">BGM: If - Bread</span>
+  <span class="cd-icon">💿</span><span id="bgm-text">BGM: If - Bread</span>
 </div>
-
-<!-- ★ 全屏流体星云画布 (蜡笔小新专属) -->
 <canvas id="particle-canvas"></canvas>
-
-<!-- 底部频谱 -->
 <div id="visualizer-container"></div>
 
-<!-- 右下角提交歌曲 (改成原生弹窗，解决 GitHub 权限拦截问题) -->
-<div id="upload-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-  <div style="background:rgba(30,30,40,0.9); border-radius:20px; padding:30px; border:1px solid rgba(255,255,255,0.2); width:90%; max-width:400px; text-align:center;">
-    <h3 style="margin-top:0; color:#fff;">✨ 上传新泡泡 ✨</h3>
-    <input type="text" id="uploader-name" placeholder="你是谁？(必填)" style="width:90%; padding:10px; margin-bottom:15px; border-radius:10px; border:none; outline:none; background:rgba(255,255,255,0.1); color:#fff;">
-    <input type="file" id="audio-file" accept="audio/*" style="width:90%; color:#fff; margin-bottom:20px; font-size:12px;">
-    <button id="submit-upload" style="background:linear-gradient(45deg, #ff6b6b, #ff8e8b); border:none; padding:10px 20px; border-radius:20px; color:#fff; font-weight:bold; cursor:pointer;">发射泡泡</button>
-    <button onclick="document.getElementById('upload-modal').style.display='none'" style="background:none; border:1px solid rgba(255,255,255,0.3); padding:10px 20px; border-radius:20px; color:#ccc; margin-left:10px; cursor:pointer;">取消</button>
-    <div id="upload-status" style="margin-top:15px; font-size:12px; color:#aaa;"></div>
-  </div>
-</div>
-
-<button onclick="document.getElementById('upload-modal').style.display='flex'" class="contribute-btn" style="cursor:pointer;">
+<!-- 恢复最原始干净的右上角/右下角弹窗，并且会跳去 GitHub 你的仓库的 audio 文件夹 -->
+<a href="https://github.com/CZ-186/Lao-Wang-s-House2/upload/main/audio" target="_blank" class="contribute-btn">
   <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
   <span>上传歌</span>
-</button>
+</a>
 
 <div id="bubble-container"></div>
-
 <div id="player">
   <div id="now-playing">STANDBY</div>
   <div id="contributor-tag"></div>
@@ -197,312 +56,111 @@
 </div>
 
 <script>
-  let currentBubble = null; 
-  let isBubblePlaying = false; 
-  let isBgmPlaying = false; 
-  let hasUserInteracted = false;
-
-  const canvas = document.getElementById('particle-canvas');
-  const ctx = canvas.getContext('2d');
-  let width, height;
-  let particles = [];
-  const mouse = { x: -1000, y: -1000, radius: 100 }; 
+  let currentBubble = null, isBubblePlaying = false, isBgmPlaying = false, hasUserInteracted = false;
+  const canvas = document.getElementById('particle-canvas'), ctx = canvas.getContext('2d');
+  let width, height, particles = []; const mouse = { x: -1000, y: -1000, radius: 100 }; 
 
   function getShinchanPoints() {
-    const oc = document.createElement('canvas');
-    const sizeX = 400; const sizeY = 400;
-    oc.width = sizeX; oc.height = sizeY;
+    const oc = document.createElement('canvas'), sizeX = 400, sizeY = 400; oc.width = sizeX; oc.height = sizeY;
     const octx = oc.getContext('2d', {willReadFrequently: true});
-    
-    octx.translate(40, 50);
-    octx.fillStyle = '#c74c43'; 
-    octx.beginPath(); octx.moveTo(90, 180); octx.lineTo(260, 230); octx.lineTo(260, 320); octx.lineTo(50, 320); octx.fill();
-    octx.strokeStyle = '#416675'; octx.lineWidth = 8; octx.beginPath(); octx.moveTo(170, 200); octx.lineTo(260, 300); octx.stroke();
-    octx.strokeStyle = '#fde2c9'; octx.lineWidth = 18; octx.lineCap = 'round'; octx.lineJoin = 'round';
-    octx.beginPath(); octx.moveTo(130, 200); octx.lineTo(60, 130); octx.stroke();
-    octx.lineWidth = 10; octx.beginPath(); octx.moveTo(60, 130); octx.lineTo(40, 80); octx.stroke(); 
-    octx.beginPath(); octx.moveTo(60, 130); octx.lineTo(75, 85); octx.stroke(); 
-    octx.fillStyle = '#fde2c9'; octx.beginPath(); octx.arc(50, 130, 15, 0, Math.PI*2); octx.fill(); 
-    octx.beginPath(); octx.ellipse(230, 150, 95, 65, 0.1, 0, Math.PI*2); octx.fill();
-    octx.beginPath(); octx.ellipse(150, 110, 65, 60, -0.2, 0, Math.PI*2); octx.fill();
-    octx.fillStyle = '#262322'; octx.beginPath(); octx.ellipse(140, 70, 40, 25, -0.2, 0, Math.PI*2); octx.fill();
-    octx.beginPath(); octx.ellipse(200, 70, 40, 25, 0.1, 0, Math.PI*2); octx.fill();
-    octx.strokeStyle = '#262322'; octx.lineWidth = 14; octx.beginPath(); octx.moveTo(100, 100); octx.quadraticCurveTo(120, 75, 145, 95); octx.stroke();
-    octx.beginPath(); octx.moveTo(180, 100); octx.quadraticCurveTo(205, 80, 230, 95); octx.stroke();
-    octx.lineWidth = 4; octx.beginPath(); octx.moveTo(105, 125); octx.quadraticCurveTo(115, 115, 125, 125); octx.quadraticCurveTo(135, 135, 145, 125); octx.stroke();
-    octx.beginPath(); octx.moveTo(195, 130); octx.quadraticCurveTo(210, 120, 225, 130); octx.stroke();
-    octx.fillStyle = '#ff929e'; octx.beginPath(); octx.ellipse(140, 155, 15, 8, -0.1, 0, Math.PI*2); octx.fill();
-    octx.beginPath(); octx.ellipse(245, 160, 18, 9, 0.1, 0, Math.PI*2); octx.fill();
-    octx.fillStyle = '#f56272'; octx.beginPath(); octx.arc(135, 155, 2, 0, Math.PI*2); octx.fill();
-    octx.beginPath(); octx.arc(145, 155, 2, 0, Math.PI*2); octx.fill();
-    octx.beginPath(); octx.arc(240, 160, 2, 0, Math.PI*2); octx.fill();
-    octx.beginPath(); octx.arc(250, 160, 2, 0, Math.PI*2); octx.fill();
-    octx.fillStyle = '#262322'; octx.beginPath(); octx.ellipse(265, 185, 4, 3, -0.2, 0, Math.PI*2); octx.fill();
-
+    octx.translate(40, 50); octx.fillStyle = '#c74c43'; octx.beginPath(); octx.moveTo(90, 180); octx.lineTo(260, 230); octx.lineTo(260, 320); octx.lineTo(50, 320); octx.fill();
+    octx.strokeStyle = '#416675'; octx.lineWidth = 8; octx.beginPath(); octx.moveTo(170, 200); octx.lineTo(260, 300); octx.stroke(); octx.strokeStyle = '#fde2c9'; octx.lineWidth = 18; octx.lineCap = 'round'; octx.lineJoin = 'round';
+    octx.beginPath(); octx.moveTo(130, 200); octx.lineTo(60, 130); octx.stroke(); octx.lineWidth = 10; octx.beginPath(); octx.moveTo(60, 130); octx.lineTo(40, 80); octx.stroke(); octx.beginPath(); octx.moveTo(60, 130); octx.lineTo(75, 85); octx.stroke(); octx.fillStyle = '#fde2c9'; octx.beginPath(); octx.arc(50, 130, 15, 0, Math.PI*2); octx.fill(); octx.beginPath(); octx.ellipse(230, 150, 95, 65, 0.1, 0, Math.PI*2); octx.fill(); octx.beginPath(); octx.ellipse(150, 110, 65, 60, -0.2, 0, Math.PI*2); octx.fill(); octx.fillStyle = '#262322'; octx.beginPath(); octx.ellipse(140, 70, 40, 25, -0.2, 0, Math.PI*2); octx.fill(); octx.beginPath(); octx.ellipse(200, 70, 40, 25, 0.1, 0, Math.PI*2); octx.fill(); octx.strokeStyle = '#262322'; octx.lineWidth = 14; octx.beginPath(); octx.moveTo(100, 100); octx.quadraticCurveTo(120, 75, 145, 95); octx.stroke(); octx.beginPath(); octx.moveTo(180, 100); octx.quadraticCurveTo(205, 80, 230, 95); octx.stroke(); octx.lineWidth = 4; octx.beginPath(); octx.moveTo(105, 125); octx.quadraticCurveTo(115, 115, 125, 125); octx.quadraticCurveTo(135, 135, 145, 125); octx.stroke(); octx.beginPath(); octx.moveTo(195, 130); octx.quadraticCurveTo(210, 120, 225, 130); octx.stroke(); octx.fillStyle = '#ff929e'; octx.beginPath(); octx.ellipse(140, 155, 15, 8, -0.1, 0, Math.PI*2); octx.fill(); octx.beginPath(); octx.ellipse(245, 160, 18, 9, 0.1, 0, Math.PI*2); octx.fill(); octx.fillStyle = '#f56272'; octx.beginPath(); octx.arc(135, 155, 2, 0, Math.PI*2); octx.fill(); octx.beginPath(); octx.arc(145, 155, 2, 0, Math.PI*2); octx.fill(); octx.beginPath(); octx.arc(240, 160, 2, 0, Math.PI*2); octx.fill(); octx.beginPath(); octx.arc(250, 160, 2, 0, Math.PI*2); octx.fill(); octx.fillStyle = '#262322'; octx.beginPath(); octx.ellipse(265, 185, 4, 3, -0.2, 0, Math.PI*2); octx.fill();
     try {
-      const data = octx.getImageData(0,0,sizeX,sizeY).data;
-      const points = [];
-      const step = 3; 
-      for(let y=0; y<sizeY; y+=step) {
-        for(let x=0; x<sizeX; x+=step) {
-          const alpha = data[(y*sizeX+x)*4+3];
-          if(alpha > 30) { 
-            const r = data[(y*sizeX+x)*4]; const g = data[(y*sizeX+x)*4+1]; const b = data[(y*sizeX+x)*4+2];
-            points.push({ x: x - sizeX/2, y: y - sizeY/2, colorBase: `rgba(${r},${g},${b},` }); 
-          }
-        }
-      }
-      return points;
+      const data = octx.getImageData(0,0,sizeX,sizeY).data; const points = []; const step = 3; 
+      for(let y=0; y<sizeY; y+=step) { for(let x=0; x<sizeX; x+=step) { const alpha = data[(y*sizeX+x)*4+3]; if(alpha > 30) { const r = data[(y*sizeX+x)*4], g = data[(y*sizeX+x)*4+1], b = data[(y*sizeX+x)*4+2]; points.push({ x: x - sizeX/2, y: y - sizeY/2, colorBase: `rgba(${r},${g},${b},` }); } } } return points;
     } catch(e) { return []; }
   }
 
   function initCanvas() {
-    width = canvas.clientWidth; height = canvas.clientHeight;
-    canvas.width = width * window.devicePixelRatio; canvas.height = height * window.devicePixelRatio;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    
-    particles = [];
-    const shapePoints = getShinchanPoints();
-    const scale = Math.min(width / 600, height / 700, 1.2); 
-    const centerX = width / 2;
-    const centerY = height * 0.25; 
-
-    shapePoints.forEach(p => {
-      if (Math.random() > 0.65) return; 
-      particles.push({
-        x: centerX + (Math.random()-0.5)*200, y: centerY + (Math.random()-0.5)*200,
-        originX: centerX + p.x * scale, originY: centerY + p.y * scale,
-        vx: 0, vy: 0, size: Math.random() * 1.5 + 0.5, 
-        color: `${p.colorBase}${0.5 + Math.random()*0.5})`, isAmbient: false
-      });
-    });
-
-    for(let i=0; i<800; i++) {
-      particles.push({
-        x: Math.random() * width, y: Math.random() * height,
-        originX: Math.random() * width, originY: Math.random() * height,
-        vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4,
-        size: Math.random() * 1.5 + 0.1,
-        color: `rgba(255, 200, 200, ${0.05 + Math.random()*0.2})`, isAmbient: true
-      });
-    }
+    width = canvas.clientWidth; height = canvas.clientHeight; canvas.width = width * window.devicePixelRatio; canvas.height = height * window.devicePixelRatio; ctx.scale(window.devicePixelRatio, window.devicePixelRatio); particles = []; const shapePoints = getShinchanPoints(); const scale = Math.min(width / 600, height / 700, 1.2); const centerX = width / 2; const centerY = height * 0.25; 
+    shapePoints.forEach(p => { if (Math.random() > 0.65) return; particles.push({ x: centerX + (Math.random()-0.5)*200, y: centerY + (Math.random()-0.5)*200, originX: centerX + p.x * scale, originY: centerY + p.y * scale, vx: 0, vy: 0, size: Math.random() * 1.5 + 0.5, color: `${p.colorBase}${0.5 + Math.random()*0.5})`, isAmbient: false }); });
+    for(let i=0; i<800; i++) { particles.push({ x: Math.random() * width, y: Math.random() * height, originX: Math.random() * width, originY: Math.random() * height, vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4, size: Math.random() * 1.5 + 0.1, color: `rgba(255, 200, 200, ${0.05 + Math.random()*0.2})`, isAmbient: true }); }
   }
-
-  window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-  window.addEventListener('mouseleave', () => { mouse.x = -1000; mouse.y = -1000; });
-  window.addEventListener('touchmove', (e) => { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, {passive: true});
-  window.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; });
+  window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); window.addEventListener('mouseleave', () => { mouse.x = -1000; mouse.y = -1000; }); window.addEventListener('touchmove', (e) => { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, {passive: true}); window.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; });
 
   function animateParticles() {
-    ctx.clearRect(0, 0, width, height);
-    ctx.globalCompositeOperation = 'lighter';
-    
-    for(let i=0; i<particles.length; i++) {
-      let p = particles[i];
-      let dx = mouse.x - p.x; let dy = mouse.y - p.y;
-      let dist = Math.sqrt(dx*dx + dy*dy);
-      
-      if(dist < mouse.radius) {
-        let force = (mouse.radius - dist) / mouse.radius;
-        p.vx -= (dx / dist) * force * 1.5; p.vy -= (dy / dist) * force * 1.5;
-      }
-      
-      if(p.isAmbient) {
-        p.x += p.vx; p.y += p.vy;
-        if(p.x < 0 || p.x > width) p.vx *= -1;
-        if(p.y < 0 || p.y > height) p.vy *= -1;
-      } else {
-        p.vx += (p.originX - p.x) * 0.03; p.vy += (p.originY - p.y) * 0.03;
-        p.vx *= 0.82; p.vy *= 0.82; 
-        p.x += p.vx; p.y += p.vy;
-      }
-      
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = p.color; ctx.fill();
-    }
-    requestAnimationFrame(animateParticles);
+    ctx.clearRect(0, 0, width, height); ctx.globalCompositeOperation = 'lighter';
+    for(let i=0; i<particles.length; i++) { let p = particles[i]; let dx = mouse.x - p.x; let dy = mouse.y - p.y; let dist = Math.sqrt(dx*dx + dy*dy);
+      if(dist < mouse.radius) { let force = (mouse.radius - dist) / mouse.radius; p.vx -= (dx / dist) * force * 1.5; p.vy -= (dy / dist) * force * 1.5; }
+      if(p.isAmbient) { p.x += p.vx; p.y += p.vy; if(p.x < 0 || p.x > width) p.vx *= -1; if(p.y < 0 || p.y > height) p.vy *= -1; } else { p.vx += (p.originX - p.x) * 0.03; p.vy += (p.originY - p.y) * 0.03; p.vx *= 0.82; p.vy *= 0.82; p.x += p.vx; p.y += p.vy; }
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill(); } requestAnimationFrame(animateParticles);
   }
+  initCanvas(); animateParticles(); window.addEventListener('resize', initCanvas);
 
-  initCanvas();
-  animateParticles();
-  window.addEventListener('resize', initCanvas);
+  const visualizerContainer = document.getElementById('visualizer-container'); const numBars = Math.floor(window.innerWidth / 6); const bars = []; const targetHeights = new Array(numBars).fill(10); const currentHeights = new Array(numBars).fill(10);
+  for (let i = 0; i < numBars; i++) { const bar = document.createElement('div'); bar.className = 'bar'; visualizerContainer.appendChild(bar); bars.push(bar); }
+  function generateTargets() { const isAnyPlaying = isBubblePlaying || isBgmPlaying; const isBassHit = isAnyPlaying && Math.random() > 0.6; for (let i = 0; i < numBars; i++) { if (!isAnyPlaying) { targetHeights[i] = 5 + Math.random() * 10; } else { const centerFactor = 1 - Math.abs((i / numBars) - 0.5) * 2; let baseHeight = 10 + Math.random() * 30; if (isBassHit) baseHeight += Math.random() * 150 * Math.pow(centerFactor, 1.5); targetHeights[i] = baseHeight; } } setTimeout(generateTargets, isAnyPlaying ? 350 : 1000); } generateTargets();
+  function renderVisualizer() { for (let i = 0; i < numBars; i++) { currentHeights[i] += (targetHeights[i] - currentHeights[i]) * 0.15; bars[i].style.height = currentHeights[i] + 'px'; const opacity = 0.3 + (currentHeights[i] / 200) * 0.7; bars[i].style.opacity = opacity; } requestAnimationFrame(renderVisualizer); } renderVisualizer();
 
-  const visualizerContainer = document.getElementById('visualizer-container');
-  const numBars = Math.floor(window.innerWidth / 6); 
-  const bars = [];
-  const targetHeights = new Array(numBars).fill(10);
-  const currentHeights = new Array(numBars).fill(10);
+  const container = document.getElementById('bubble-container'), player = document.getElementById('player'), audioElement = document.getElementById('audio-element'), nowPlaying = document.getElementById('now-playing'), contributorTag = document.getElementById('contributor-tag'), bgmElement = document.getElementById('bgm-element'), bgmToggle = document.getElementById('bgm-toggle'), bgmText = document.getElementById('bgm-text');
 
-  for (let i = 0; i < numBars; i++) {
-    const bar = document.createElement('div'); bar.className = 'bar';
-    visualizerContainer.appendChild(bar); bars.push(bar);
-  }
+  // --- 神级静态自动读取 GitHub 音频列表大法 ---
+  const knownData = {
+    "如愿.m4a": { title: "如愿", contributor: "(你猜)", size: 105 },
+    "枫.m4a": { title: "枫", contributor: "老王", size: 110 },
+    "告白气球.m4a": { title: "告白气球", contributor: "唔机", size: 95 },
+    "情歌.m4a": { title: "情歌", contributor: "老王", size: 85 },
+    "巴赫旧约.m4a": { title: "巴赫旧约", contributor: "老王", size: 100 },
+    "寂寞的季节.m4a": { title: "寂寞的季节", contributor: "小声的老王", size: 90 },
+    "群歌!.m4a": { title: "群歌!", contributor: "(你猜)", size: 95 },
+    "便利贴!_!.m4a": { title: "便利贴", contributor: "(你猜)", size: 95 },
+    "如愿^ - ^.m4a": { title: "如愿", contributor: "(你猜)", size: 105 }
+  };
 
-  function generateTargets() {
-    const isAnyPlaying = isBubblePlaying || isBgmPlaying;
-    const isBassHit = isAnyPlaying && Math.random() > 0.6; 
-    for (let i = 0; i < numBars; i++) {
-      if (!isAnyPlaying) {
-        targetHeights[i] = 5 + Math.random() * 10;
-      } else {
-        const centerFactor = 1 - Math.abs((i / numBars) - 0.5) * 2;
-        let baseHeight = 10 + Math.random() * 30;
-        if (isBassHit) baseHeight += Math.random() * 150 * Math.pow(centerFactor, 1.5);
-        targetHeights[i] = baseHeight;
-      }
-    }
-    setTimeout(generateTargets, isAnyPlaying ? 350 : 1000); 
-  }
-  generateTargets();
-
-  function renderVisualizer() {
-    for (let i = 0; i < numBars; i++) {
-      currentHeights[i] += (targetHeights[i] - currentHeights[i]) * 0.15;
-      bars[i].style.height = currentHeights[i] + 'px';
-      const opacity = 0.3 + (currentHeights[i] / 200) * 0.7;
-      bars[i].style.opacity = opacity;
-    }
-    requestAnimationFrame(renderVisualizer);
-  }
-  renderVisualizer();
-
-  const container = document.getElementById('bubble-container');
-  const player = document.getElementById('player');
-  const audioElement = document.getElementById('audio-element');
-  const nowPlaying = document.getElementById('now-playing');
-  const contributorTag = document.getElementById('contributor-tag');
-  const bgmElement = document.getElementById('bgm-element');
-  const bgmToggle = document.getElementById('bgm-toggle');
-  const bgmText = document.getElementById('bgm-text');
-
-  fetch('./playlist.json')
+  fetch('https://api.github.com/repos/CZ-186/Lao-Wang-s-House2/contents/audio')
     .then(response => response.json())
     .then(data => {
-      setTimeout(() => {
-        initBubbles(data);
-      }, 100); 
+      if (!Array.isArray(data)) return;
+      const playlist = [];
+      data.forEach(file => {
+        if (file.name.endsWith('.m4a') || file.name.endsWith('.mp3') || file.name.endsWith('.wav')) {
+          if (knownData[file.name]) {
+            playlist.push({
+              title: knownData[file.name].title,
+              src: "https://raw.githubusercontent.com/CZ-186/Lao-Wang-s-House2/main/audio/" + encodeURIComponent(file.name),
+              size: knownData[file.name].size,
+              contributor: knownData[file.name].contributor
+            });
+          } else {
+            let baseName = file.name.replace(/\.[^/.]+$/, "");
+            let title = baseName;
+            let contributor = "神秘人";
+            if (baseName.includes('_')) { const parts = baseName.split('_'); title = parts[0]; contributor = parts.slice(1).join('_'); } else if (baseName.includes('-')) { const parts = baseName.split('-'); title = parts[0]; contributor = parts.slice(1).join('-'); }
+            playlist.push({ title: title, src: "https://raw.githubusercontent.com/CZ-186/Lao-Wang-s-House2/main/audio/" + encodeURIComponent(file.name), size: 80 + Math.random() * 40, contributor: contributor });
+          }
+        }
+      });
+      setTimeout(() => initBubbles(playlist), 100);
     })
     .catch(error => console.error('Error loading playlist:', error)); 
 
   function initBubbles(songs) {
-    container.innerHTML = '';
-    const placedPos = [];
-    
-    function getSafePos(size) {
-      const paddingX = 30, paddingY = 30, containerWidth = window.innerWidth, startY = 10, containerHeight = window.innerHeight * 0.6;
-      for (let attempts = 0; attempts < 150; attempts++) {
-        const x = paddingX + Math.random() * (containerWidth - size - paddingX * 2);
-        const y = startY + Math.random() * (containerHeight - size - startY - paddingY);
-        let safe = true;
-        for (const p of placedPos) {
-          const dx = (x + size/2) - (p.x + p.size/2), dy = (y + size/2) - (p.y + p.size/2);
-          if (Math.sqrt(dx*dx + dy*dy) < (size/2 + p.size/2) * 0.85) { safe = false; break; }
-        }
-        if (safe) { placedPos.push({x, y, size}); return { x, y }; }
-      }
-      return { x: paddingX + Math.random() * (containerWidth - size - paddingX * 2), y: startY + Math.random() * (containerHeight - size - startY - paddingY) };
-    }
-
+    container.innerHTML = ''; const placedPos = [];
+    function getSafePos(size) { const paddingX = 30, paddingY = 30, containerWidth = window.innerWidth, startY = 10, containerHeight = window.innerHeight * 0.6; for (let attempts = 0; attempts < 150; attempts++) { const x = paddingX + Math.random() * (containerWidth - size - paddingX * 2); const y = startY + Math.random() * (containerHeight - size - startY - paddingY); let safe = true; for (const p of placedPos) { const dx = (x + size/2) - (p.x + p.size/2), dy = (y + size/2) - (p.y + p.size/2); if (Math.sqrt(dx*dx + dy*dy) < (size/2 + p.size/2) * 0.85) { safe = false; break; } } if (safe) { placedPos.push({x, y, size}); return { x, y }; } } return { x: paddingX + Math.random() * (containerWidth - size - paddingX * 2), y: startY + Math.random() * (containerHeight - size - startY - paddingY) }; }
     songs.forEach((song) => {
-      const bubble = document.createElement('div'); bubble.className = 'bubble';
-      bubble.style.width = song.size + 'px'; bubble.style.height = song.size + 'px';
+      const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.style.width = song.size + 'px'; bubble.style.height = song.size + 'px';
       const pos = getSafePos(song.size); bubble.style.left = pos.x + 'px'; bubble.style.top = pos.y + 'px';
-      
-      const delay = Math.random() * 5, duration = 5 + Math.random() * 5;
-      bubble.style.animationDuration = duration + 's'; bubble.style.animationDelay = '-' + delay + 's';
-
-      const title = document.createElement('div'); title.className = 'title';
-      let innerHtml = song.title.replace('\n', '<br>');
-      if (song.contributor) innerHtml += `<span class="contributor">from ${song.contributor}</span>`;
-      title.innerHTML = innerHtml; bubble.appendChild(title);
-
+      const delay = Math.random() * 5, duration = 5 + Math.random() * 5; bubble.style.animationDuration = duration + 's'; bubble.style.animationDelay = '-' + delay + 's';
+      const title = document.createElement('div'); title.className = 'title'; let innerHtml = song.title.replace('\n', '<br>'); if (song.contributor) innerHtml += `<span class="contributor">from ${song.contributor}</span>`; title.innerHTML = innerHtml; bubble.appendChild(title);
       bubble.addEventListener('click', (e) => {
-        if (isBgmPlaying) pauseBGM();
-        if (currentBubble) currentBubble.classList.remove('playing');
-        bubble.classList.add('playing'); currentBubble = bubble;
-        player.classList.add('active'); nowPlaying.innerText = song.title.replace('\n', ' ');
-        contributorTag.innerText = song.contributor ? `FROM: ${song.contributor}` : '';
+        if (isBgmPlaying) pauseBGM(); if (currentBubble) currentBubble.classList.remove('playing'); bubble.classList.add('playing'); currentBubble = bubble;
+        player.classList.add('active'); nowPlaying.innerText = song.title.replace('\n', ' '); contributorTag.innerText = song.contributor ? `FROM: ${song.contributor}` : '';
         audioElement.src = song.src; audioElement.play();
-
-        const notes = ['✧', '✦', '·', '°'];
-        for(let i=0; i<4; i++) {
-          const note = document.createElement('div'); note.className = 'music-note'; note.innerText = notes[Math.floor(Math.random() * notes.length)];
-          note.style.left = (e.clientX - 10 + Math.random()*20) + 'px'; note.style.top = (e.clientY - 10 + Math.random()*20) + 'px'; note.style.animationDuration = (1.5 + Math.random()) + 's';
-          document.body.appendChild(note); setTimeout(() => note.remove(), 2000);
-        }
+        const notes = ['✧', '✦', '·', '°']; for(let i=0; i<4; i++) { const note = document.createElement('div'); note.className = 'music-note'; note.innerText = notes[Math.floor(Math.random() * notes.length)]; note.style.left = (e.clientX - 10 + Math.random()*20) + 'px'; note.style.top = (e.clientY - 10 + Math.random()*20) + 'px'; note.style.animationDuration = (1.5 + Math.random()) + 's'; document.body.appendChild(note); setTimeout(() => note.remove(), 2000); }
       });
       container.appendChild(bubble);
     });
   }
 
-  function playBGM() {
-    bgmElement.play().then(() => {
-      isBgmPlaying = true; bgmToggle.classList.remove('paused'); bgmText.innerText = 'BGM: If - Bread';
-    }).catch(e => console.log('BGM auto-play prevented'));
-  }
-  function pauseBGM() {
-    bgmElement.pause(); isBgmPlaying = false; bgmToggle.classList.add('paused'); bgmText.innerText = 'BGM PAUSED';
-  }
+  function playBGM() { bgmElement.play().then(() => { isBgmPlaying = true; bgmToggle.classList.remove('paused'); bgmText.innerText = 'BGM: If - Bread'; }).catch(e => console.log('BGM auto-play prevented')); }
+  function pauseBGM() { bgmElement.pause(); isBgmPlaying = false; bgmToggle.classList.add('paused'); bgmText.innerText = 'BGM PAUSED'; }
 
-  window.addEventListener('click', (e) => {
-    if (e.target.closest('.bubble') || e.target.closest('#bgm-toggle') || e.target.closest('#player') || e.target.closest('.contribute-btn')) return;
-    if (!hasUserInteracted) { hasUserInteracted = true; if (!isBubblePlaying) playBGM(); }
-  }, { once: true });
-
-  bgmToggle.addEventListener('click', (e) => {
-    e.stopPropagation(); hasUserInteracted = true;
-    if (isBgmPlaying) {
-      pauseBGM();
-    } else {
-      if (isBubblePlaying) { audioElement.pause(); if (currentBubble) currentBubble.classList.remove('playing'); player.classList.remove('active'); isBubblePlaying = false; }
-      playBGM();
-    }
-  });
-
+  window.addEventListener('click', (e) => { if (e.target.closest('.bubble') || e.target.closest('#bgm-toggle') || e.target.closest('#player') || e.target.closest('.contribute-btn')) return; if (!hasUserInteracted) { hasUserInteracted = true; if (!isBubblePlaying) playBGM(); } }, { once: true });
+  bgmToggle.addEventListener('click', (e) => { e.stopPropagation(); hasUserInteracted = true; if (isBgmPlaying) { pauseBGM(); } else { if (isBubblePlaying) { audioElement.pause(); if (currentBubble) currentBubble.classList.remove('playing'); player.classList.remove('active'); isBubblePlaying = false; } playBGM(); } });
   audioElement.addEventListener('ended', () => { if (currentBubble) currentBubble.classList.remove('playing'); nowPlaying.innerText = 'STANDBY'; isBubblePlaying = false; });
   audioElement.addEventListener('pause', () => { isBubblePlaying = false; });
   audioElement.addEventListener('play', () => { isBubblePlaying = true; });
-
-  // 原生上传逻辑
-  document.getElementById('submit-upload').addEventListener('click', () => {
-    const nameInput = document.getElementById('uploader-name').value.trim();
-    const fileInput = document.getElementById('audio-file').files[0];
-    const statusDiv = document.getElementById('upload-status');
-
-    if (!nameInput) return statusDiv.innerText = '⚠️ 请填写你是谁呀~';
-    if (!fileInput) return statusDiv.innerText = '⚠️ 忘了选歌曲文件咯~';
-    if (fileInput.size > 20 * 1024 * 1024) return statusDiv.innerText = '⚠️ 文件太大了，不要超过20MB哦';
-
-    statusDiv.innerText = '🚀 正在为你打包发射新泡泡...';
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const payload = {
-        fileName: fileInput.name,
-        fileContent: e.target.result,
-        contributor: nameInput
-      };
-
-      fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          statusDiv.innerText = '🎉 发射成功！1分钟后刷新网页看新泡泡~';
-          setTimeout(() => { document.getElementById('upload-modal').style.display = 'none'; }, 3000);
-        } else {
-          statusDiv.innerText = '❌ 发射失败: ' + (res.error || '未知错误');
-        }
-      })
-      .catch(err => {
-        statusDiv.innerText = '❌ 网络开小差了，发射失败...';
-      });
-    };
-    reader.readAsDataURL(fileInput);
-  });
 </script>
 </body>
 </html>
