@@ -171,11 +171,22 @@
 <!-- 底部频谱 -->
 <div id="visualizer-container"></div>
 
-<!-- 右下角提交歌曲 -->
-<a href="https://github.com/CZ-186/Lao-Wang-s-House2/upload/main/audio" target="_blank" class="contribute-btn">
+<!-- 右下角提交歌曲 (改成原生弹窗，解决 GitHub 权限拦截问题) -->
+<div id="upload-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:rgba(30,30,40,0.9); border-radius:20px; padding:30px; border:1px solid rgba(255,255,255,0.2); width:90%; max-width:400px; text-align:center;">
+    <h3 style="margin-top:0; color:#fff;">✨ 上传新泡泡 ✨</h3>
+    <input type="text" id="uploader-name" placeholder="你是谁？(必填)" style="width:90%; padding:10px; margin-bottom:15px; border-radius:10px; border:none; outline:none; background:rgba(255,255,255,0.1); color:#fff;">
+    <input type="file" id="audio-file" accept="audio/*" style="width:90%; color:#fff; margin-bottom:20px; font-size:12px;">
+    <button id="submit-upload" style="background:linear-gradient(45deg, #ff6b6b, #ff8e8b); border:none; padding:10px 20px; border-radius:20px; color:#fff; font-weight:bold; cursor:pointer;">发射泡泡</button>
+    <button onclick="document.getElementById('upload-modal').style.display='none'" style="background:none; border:1px solid rgba(255,255,255,0.3); padding:10px 20px; border-radius:20px; color:#ccc; margin-left:10px; cursor:pointer;">取消</button>
+    <div id="upload-status" style="margin-top:15px; font-size:12px; color:#aaa;"></div>
+  </div>
+</div>
+
+<button onclick="document.getElementById('upload-modal').style.display='flex'" class="contribute-btn" style="cursor:pointer;">
   <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
   <span>上传歌</span>
-</a>
+</button>
 
 <div id="bubble-container"></div>
 
@@ -451,6 +462,47 @@
   audioElement.addEventListener('ended', () => { if (currentBubble) currentBubble.classList.remove('playing'); nowPlaying.innerText = 'STANDBY'; isBubblePlaying = false; });
   audioElement.addEventListener('pause', () => { isBubblePlaying = false; });
   audioElement.addEventListener('play', () => { isBubblePlaying = true; });
+
+  // 原生上传逻辑
+  document.getElementById('submit-upload').addEventListener('click', () => {
+    const nameInput = document.getElementById('uploader-name').value.trim();
+    const fileInput = document.getElementById('audio-file').files[0];
+    const statusDiv = document.getElementById('upload-status');
+
+    if (!nameInput) return statusDiv.innerText = '⚠️ 请填写你是谁呀~';
+    if (!fileInput) return statusDiv.innerText = '⚠️ 忘了选歌曲文件咯~';
+    if (fileInput.size > 20 * 1024 * 1024) return statusDiv.innerText = '⚠️ 文件太大了，不要超过20MB哦';
+
+    statusDiv.innerText = '🚀 正在为你打包发射新泡泡...';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const payload = {
+        fileName: fileInput.name,
+        fileContent: e.target.result,
+        contributor: nameInput
+      };
+
+      fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) {
+          statusDiv.innerText = '🎉 发射成功！1分钟后刷新网页看新泡泡~';
+          setTimeout(() => { document.getElementById('upload-modal').style.display = 'none'; }, 3000);
+        } else {
+          statusDiv.innerText = '❌ 发射失败: ' + (res.error || '未知错误');
+        }
+      })
+      .catch(err => {
+        statusDiv.innerText = '❌ 网络开小差了，发射失败...';
+      });
+    };
+    reader.readAsDataURL(fileInput);
+  });
 </script>
 </body>
 </html>
